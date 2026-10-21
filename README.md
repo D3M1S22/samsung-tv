@@ -27,10 +27,10 @@ extracted keys, device tokens, serial numbers, private network configuration, or
 precompiled exploit payloads. Release archives contain payloads built from this
 source.
 
-This README describes the current source tree. The `archive-root` command was
-added after v0.0.8 and is not included in v0.0.8 or earlier standalone releases.
-Use the [source instructions](#run-from-source) for that route. For commands in
-the v0.0.8 download, use its [versioned README](https://github.com/chris-ritsen/samsung-tv-root/blob/v0.0.8/README.md).
+This README describes v0.0.9 and the current source tree. The `archive-root`
+command requires v0.0.9 or newer, or a source checkout; it is absent from v0.0.8
+and earlier standalone releases. For commands in an older download, use its
+bundled documentation or the [v0.0.8 README](https://github.com/chris-ritsen/samsung-tv-root/blob/v0.0.8/README.md).
 
 ## Tested TVs
 
@@ -141,7 +141,7 @@ replace `.venv/bin/python` with `.venv\Scripts\python.exe`; the payload build
 also requires GNU Make and the .NET SDK. A standalone release avoids these build
 requirements.
 
-The source-only archive route additionally needs the host's `openssl` command
+The archive route additionally needs the host's `openssl` command
 on `PATH`. For TVs with .NET 3.1, build `make common31-payload` using SDK
 6.0.428, as selected by `payloads/common31/global.json`. The build restores the
 .NET 3.1 reference packages from NuGet; installing a .NET 3.1 SDK is not required.
@@ -175,7 +175,7 @@ before the command, for example
 
 If a command is rejected as an `invalid choice`, check `--version` and `--help`
 against the documentation for that release. In particular, v0.0.8 does not
-contain `archive-root`; use a source checkout for that command.
+contain `archive-root`; download v0.0.9 or newer, or use a source checkout.
 
 Create the configuration once, then replace the example name and address with
 the TV's values:
@@ -355,9 +355,10 @@ execution paths.
 
 ### Archive root route
 
-This route is source-only as of v0.0.8. Install the source and build its payloads
-as described [above](#run-from-source), and ensure `openssl` is on the host's
-`PATH`.
+This route requires v0.0.9 or newer, or a source checkout with built payloads.
+Ensure `openssl` is on the host's `PATH`. Standalone archives already include
+both the .NET 6 and .NET 3.1 archive payloads; source builds are described
+[above](#run-from-source).
 
 This separate root method uses the SDB package-name foothold, a
 capability-bearing Samsung `dotnet`, a private mount namespace, and Samsung's
@@ -373,11 +374,13 @@ implementation has not been run on an S90D. The agent still has Samsung's
 `User` SMACK label; UID 0 is not proof that every security boundary is gone.
 
 ```console
-.venv/bin/python -m samsung_tv_root archive-root probe "$TV_IP"
-.venv/bin/python -m samsung_tv_root archive-root root "$TV_IP" --command 'id'
+./samsung-tv-root archive-root probe "$TV_IP"
+./samsung-tv-root archive-root root "$TV_IP" --command 'id'
 ```
 
-On Windows, use `.venv\Scripts\python.exe` in place of `.venv/bin/python`.
+On Windows, use `samsung-tv-root.exe`. From source, replace `./samsung-tv-root`
+with `.venv/bin/python -m samsung_tv_root` (Windows:
+`.venv\Scripts\python.exe -m samsung_tv_root`).
 `probe` performs the full root acquisition, authenticated identity check, and
 cleanup. It is not a read-only compatibility check. Both commands require a
 working SDB connection; an open TCP port or a reachable TV network API alone

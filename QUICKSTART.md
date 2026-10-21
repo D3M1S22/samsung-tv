@@ -29,10 +29,10 @@ payloads; they do not require a local payload build. Put an unusual Tizen Studio
 location before the command, for example
 `./samsung-tv-root --sdb /path/to/sdb doctor`.
 
-The current source documentation includes `archive-root`, which is absent from
-v0.0.8 and earlier standalone releases. For those downloads, follow the bundled
-documentation or the [v0.0.8 README](https://github.com/chris-ritsen/samsung-tv-root/blob/v0.0.8/README.md).
-Use a source checkout for `archive-root`.
+These instructions describe v0.0.9 and the current source tree. `archive-root`
+requires v0.0.9 or newer, or a source checkout. For v0.0.8 and earlier downloads,
+follow the bundled documentation or the
+[v0.0.8 README](https://github.com/chris-ritsen/samsung-tv-root/blob/v0.0.8/README.md).
 
 To run from source instead of a standalone release:
 
@@ -114,14 +114,14 @@ of its temporary credential and GPU page-table changes before accepting root.
 The QN90B route changes its own exploit process's credentials and exits after
 the requested command; it does not perform the QN90F restoration sequence.
 
-The source-only archive route has no model whitelist. It checks the SDB
+The archive route in v0.0.9 and newer has no model whitelist. It checks the SDB
 foothold, required file capabilities, tar support, and installed .NET runtime,
 then stages and executes a root payload. `probe` performs the full root
 acquisition and cleanup; it is not a read-only preflight:
 
 ```console
-.venv/bin/python -m samsung_tv_root archive-root probe 192.0.2.50
-.venv/bin/python -m samsung_tv_root archive-root root 192.0.2.50 --command 'id'
+./samsung-tv-root archive-root probe 192.0.2.50
+./samsung-tv-root archive-root root 192.0.2.50 --command 'id'
 ```
 
 This route was live-tested on QN90B and QN90F. It does not yet provide an

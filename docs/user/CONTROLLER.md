@@ -147,7 +147,7 @@ The endpoint accepts authenticated JSON requests and event subscriptions. It is
 not a LAN server.
 
 The commands in this section require a running `daemon run` on the same host.
-The direct `qn90b root`, `qn90f root`, and source-only `archive-root` commands
+The direct `qn90b root`, `qn90f root`, and `archive-root` commands
 create their own sessions and do not start that daemon. Avoid running a direct
 root attempt alongside a controller that already owns the same TV.
 
