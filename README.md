@@ -27,6 +27,11 @@ extracted keys, device tokens, serial numbers, private network configuration, or
 precompiled exploit payloads. Release archives contain payloads built from this
 source.
 
+This README describes the current source tree. The `archive-root` command was
+added after v0.0.8 and is not included in v0.0.8 or earlier standalone releases.
+Use the [source instructions](#run-from-source) for that route. For commands in
+the v0.0.8 download, use its [versioned README](https://github.com/chris-ritsen/samsung-tv-root/blob/v0.0.8/README.md).
+
 ## Tested TVs
 
 | Profile | Exact model      | Installed firmware | Internal build                     | Platform                                           |
@@ -53,7 +58,8 @@ requirements instead of rejecting every build-number change.
   `uid=901(sdk)` command foothold.
 - A QN90B `/dev/sdp_pqe_fdet` physical-memory exploit.
 - A QN90F Mali-G510 r48p0 exploit based on `CVE-2025-0072`.
-- A model-independent SDK archive-launcher root route, live-tested on my QN90B and QN90F.
+- A model-independent SDK archive-launcher root route in the source tree,
+  live-tested on my QN90B and QN90F.
 - Interactive root shells and authenticated root command execution.
 - UEP status and volatile disable controls for unsigned native execution.
 - An event-driven host controller that reacquires root after TV boot or root
@@ -71,7 +77,8 @@ does not install a TV-side boot service.
 
 ## Capability status
 
-`implemented` means the public adapter and release payload are present.
+`implemented` means the public adapter and payload source are present. Use the
+documentation shipped with a release to check that release's capabilities.
 `proven_not_packaged` means the operation was validated on the stated TV but
 the public adapter is not included. `not_investigated` means this project has
 not established an answer for that model. `unsupported` is reserved for a
@@ -104,6 +111,8 @@ Python 3.12 or newer can run the host CLI directly; a standalone release is not
 required. From a clone of this repository:
 
 ```console
+git clone https://github.com/chris-ritsen/samsung-tv-root.git
+cd samsung-tv-root
 python -m venv .venv
 .venv/bin/python -m pip install -e .
 .venv/bin/python -m samsung_tv_root doctor
@@ -119,15 +128,31 @@ subcommand when Tizen Studio is not in its default location:
 ```
 
 Preflight needs only Python and Samsung's `sdb`. Root operations also need the
-TV payloads: install the .NET 6 SDK and run `make payloads` once in the source
-tree, then use the same `python -m samsung_tv_root qn90f root ...` form.
+TV payloads. With GNU Make and the .NET 6 SDK installed, build the model-specific
+payloads once:
+
+```console
+make common-payload qn90b-payload qn90f-payload
+.venv/bin/python -m samsung_tv_root doctor
+```
+
+Then use `.venv/bin/python -m samsung_tv_root qn90f root ...`. On Windows,
+replace `.venv/bin/python` with `.venv\Scripts\python.exe`; the payload build
+also requires GNU Make and the .NET SDK. A standalone release avoids these build
+requirements.
+
+The source-only archive route additionally needs the host's `openssl` command
+on `PATH`. For TVs with .NET 3.1, build `make common31-payload` using SDK
+6.0.428, as selected by `payloads/common31/global.json`. The build restores the
+.NET 3.1 reference packages from NuGet; installing a .NET 3.1 SDK is not required.
 
 `uv sync --locked` followed by `uv run samsung-tv-root ...` is the equivalent
 developer workflow.
 
 ## Install a release
 
-Download and extract the archive matching the host:
+Download from [Releases](https://github.com/chris-ritsen/samsung-tv-root/releases)
+and extract the archive matching the host:
 
 - Linux x86-64 or ARM64: `.tar.gz`
 - macOS Intel or Apple Silicon: `.tar.gz`
@@ -148,6 +173,10 @@ Use `samsung-tv-root.exe` on Windows. Put an unusual Tizen Studio location
 before the command, for example
 `./samsung-tv-root --sdb /path/to/tizen-studio/tools/sdb doctor`.
 
+If a command is rejected as an `invalid choice`, check `--version` and `--help`
+against the documentation for that release. In particular, v0.0.8 does not
+contain `archive-root`; use a source checkout for that command.
+
 Create the configuration once, then replace the example name and address with
 the TV's values:
 
@@ -165,7 +194,8 @@ For a nonstandard Tizen Studio installation, add a top-level
 
 ## Enable Developer Mode
 
-Use a Samsung `BN59-01199F` full-button IR remote for this step. On the TV,
+Use the remote's number-entry controls; a Samsung `BN59-01199F` full-button IR
+remote was used on the tested TVs. On the TV,
 open Smart Hub, open Apps, focus App Settings, and enter `12345` with the
 remote's number keys. Enable Developer Mode, enter the controller computer's
 IPv4 address, and reboot the TV.
@@ -325,6 +355,10 @@ execution paths.
 
 ### Archive root route
 
+This route is source-only as of v0.0.8. Install the source and build its payloads
+as described [above](#run-from-source), and ensure `openssl` is on the host's
+`PATH`.
+
 This separate root method uses the SDB package-name foothold, a
 capability-bearing Samsung `dotnet`, a private mount namespace, and Samsung's
 signed-archive launcher. [motodrizzle](https://www.reddit.com/r/Tizen/comments/1wl4e0n/i_made_a_minimal_plexyoutube_launcher_the_default/)
@@ -339,9 +373,15 @@ implementation has not been run on an S90D. The agent still has Samsung's
 `User` SMACK label; UID 0 is not proof that every security boundary is gone.
 
 ```console
-./samsung-tv-root archive-root probe "$TV_IP"
-./samsung-tv-root archive-root root "$TV_IP" --command 'id'
+.venv/bin/python -m samsung_tv_root archive-root probe "$TV_IP"
+.venv/bin/python -m samsung_tv_root archive-root root "$TV_IP" --command 'id'
 ```
+
+On Windows, use `.venv\Scripts\python.exe` in place of `.venv/bin/python`.
+`probe` performs the full root acquisition, authenticated identity check, and
+cleanup. It is not a read-only compatibility check. Both commands require a
+working SDB connection; an open TCP port or a reachable TV network API alone
+does not establish that SDB is available.
 
 Use `-o json` before `archive-root` for machine-readable identity and cleanup
 evidence. The older `archive-root probe MODEL HOST` spelling still works, but
@@ -362,13 +402,18 @@ the direct commands:
 
 ```console
 ./samsung-tv-root config init
+```
+
+Edit the TV name, model, and address in the file printed by `config init`, then
+validate it and start the controller:
+
+```console
 ./samsung-tv-root config check
 ./samsung-tv-root daemon run
 ```
 
-Edit the generated TV name, model, and address. The daemon follows TV lifecycle
-events, acquires root, and starts explicitly configured remote and native-event
-sessions.
+The daemon follows TV lifecycle events, acquires root, and starts explicitly
+configured remote and native-event sessions.
 `my-tv` in the examples below is that user-chosen configuration name.
 
 On Linux with a systemd user manager, install the host service explicitly:
@@ -422,7 +467,8 @@ source-oriented procedure is in the
 ## Build from source
 
 Source development requires Python 3.12, `uv`, a .NET 6 SDK, and Clang/LLD with
-ARMv7 support:
+ARMv7 support. Install SDK 6.0.428 for the legacy archive payload build and
+OpenSSL for archive-root commands:
 
 ```console
 uv sync --all-groups

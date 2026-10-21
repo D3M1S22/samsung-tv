@@ -108,9 +108,14 @@ def _check_target(client: SdbClient) -> TargetAssessment:
 
 
 def _openssl(*arguments: str) -> None:
-    result = subprocess.run(
-        ("openssl", *arguments), capture_output=True, text=True, check=False
-    )
+    try:
+        result = subprocess.run(
+            ("openssl", *arguments), capture_output=True, text=True, check=False
+        )
+    except FileNotFoundError as error:
+        raise ArchiveRootError(
+            "OpenSSL was not found; install it on the host and put openssl on PATH"
+        ) from error
     if result.returncode != 0:
         raise ArchiveRootError(
             f"openssl {arguments[0]} failed: {result.stderr.strip()}"
@@ -197,7 +202,7 @@ def _stage(client: SdbClient, directory: Path, payloads: Path, package: str) -> 
     for name in PAYLOAD_FILES:
         source = payloads / name
         if not source.is_file():
-            raise ArchiveRootError(f"missing payload {source}; run make common-payload")
+            raise ArchiveRootError(f"missing payload {source}")
         client.push(source, staging / name)
     for name in RUNTIME_CONFIG_FILES:
         client.push(directory / name, staging / name)
@@ -248,7 +253,13 @@ async def probe(
     )
     for name in PAYLOAD_FILES:
         if not (payloads / name).is_file():
-            raise ArchiveRootError(f"missing payload {payloads / name}")
+            build_target = (
+                "common31-payload" if assessment.runtime == "3.1" else "common-payload"
+            )
+            raise ArchiveRootError(
+                f"missing payload {payloads / name}; re-extract the release or "
+                f"run 'make {build_target}' in the source checkout"
+            )
     package = "archive-root-" + secrets.token_hex(8)
     staging_started = False
     launch_task: asyncio.Task[CaptureResult] | None = None

@@ -29,9 +29,16 @@ payloads; they do not require a local payload build. Put an unusual Tizen Studio
 location before the command, for example
 `./samsung-tv-root --sdb /path/to/sdb doctor`.
 
+The current source documentation includes `archive-root`, which is absent from
+v0.0.8 and earlier standalone releases. For those downloads, follow the bundled
+documentation or the [v0.0.8 README](https://github.com/chris-ritsen/samsung-tv-root/blob/v0.0.8/README.md).
+Use a source checkout for `archive-root`.
+
 To run from source instead of a standalone release:
 
 ```console
+git clone https://github.com/chris-ritsen/samsung-tv-root.git
+cd samsung-tv-root
 python -m venv .venv
 .venv/bin/python -m pip install -e .
 .venv/bin/python -m samsung_tv_root doctor
@@ -39,8 +46,16 @@ python -m venv .venv
 
 On Windows, use `py -3.12` and `.venv\Scripts\python.exe`. When running from a
 source checkout, preflight needs only Python and `sdb`; root commands also
-require the .NET 6 SDK and one `make payloads` build. Building the archive route
-for TVs with only a .NET 3.1 runtime also requires a .NET 3.1 targeting pack.
+require GNU Make, the .NET 6 SDK, and built TV payloads. Run
+`make common-payload qn90b-payload qn90f-payload` for the model-specific routes.
+The archive route needs OpenSSL on the host's `PATH`; for a TV with .NET 3.1,
+also run `make common31-payload` with SDK 6.0.428 installed. That build restores
+the .NET 3.1 reference packages from NuGet. See the
+[source instructions](README.md#run-from-source).
+
+For source commands below, replace `./samsung-tv-root` with
+`.venv/bin/python -m samsung_tv_root` (Windows:
+`.venv\Scripts\python.exe -m samsung_tv_root`).
 
 ## 4. Save the TV profile
 
@@ -94,22 +109,30 @@ An explicit address remains supported:
 ```
 
 Use `qn90b` for the 2022 PontusM platform. Preflight reports `tested`,
-`compatible-untested`, or `incompatible`. Successful root acquisition includes
-verification that temporary kernel state was restored.
+`compatible-untested`, or `incompatible`. The QN90F route verifies restoration
+of its temporary credential and GPU page-table changes before accepting root.
+The QN90B route changes its own exploit process's credentials and exits after
+the requested command; it does not perform the QN90F restoration sequence.
 
-The third root route accepts any TV host. It checks the SDB foothold, required
-file capabilities, tar support, and installed .NET runtime on that TV before
-staging or executing a payload. A passing check is not proof that root will work
-until the authenticated UID 0 callback succeeds:
+The source-only archive route has no model whitelist. It checks the SDB
+foothold, required file capabilities, tar support, and installed .NET runtime,
+then stages and executes a root payload. `probe` performs the full root
+acquisition and cleanup; it is not a read-only preflight:
 
 ```console
-./samsung-tv-root archive-root probe 192.0.2.50
-./samsung-tv-root archive-root root 192.0.2.50 --command 'id'
+.venv/bin/python -m samsung_tv_root archive-root probe 192.0.2.50
+.venv/bin/python -m samsung_tv_root archive-root root 192.0.2.50 --command 'id'
 ```
 
 This route was live-tested on QN90B and QN90F. It does not yet provide an
 interactive shell, disable UEP, or replace the controller's root method. It
 cleans its per-run TV staging files after a normal session.
+
+All root routes here require a working SDB connection. If TCP port 26101 refuses
+connections, resolve Developer Mode and SDB availability before running root
+commands. A reachable TV network API does not prove SDB is available. A rejected
+`dotnet --list-runtimes` currently stops archive-root runtime detection, even
+when a runtime directory exists.
 
 ## 6. Keep root available
 
