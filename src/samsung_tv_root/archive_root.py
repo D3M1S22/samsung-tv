@@ -41,6 +41,7 @@ class TargetAssessment:
     capabilities: str
     original_hashes: str
     runtime: str
+    runtime_source: str
 
 
 def _capture(client: SdbClient, command: str, timeout: float = 15.0) -> str:
@@ -79,8 +80,7 @@ def _runtime(client: SdbClient) -> str:
     ):
         active = _capture(client, "readlink -f /usr/share/dotnet.tizen/netcoreapp")
         match = re.fullmatch(
-            r"/usr/share/dotnet/shared/Microsoft\.NETCore\.App/"
-            r"(\d+)\.(\d+)\.(\d+)", active
+            r"(\d+)\.(\d+)\.(\d+)", PurePosixPath(active).name
         )
         if match is None:
             raise ArchiveRootError(f"unexpected active .NET runtime path: {active}")
@@ -102,7 +102,9 @@ def _runtime(client: SdbClient) -> str:
     raise ArchiveRootError("no supported Microsoft.NETCore.App runtime (3.1 or 6+)")
 
 
-def _check_target(client: SdbClient) -> TargetAssessment:
+def _check_target(client: SdbClient, runtime: str | None = None) -> TargetAssessment:
+    if runtime is not None and runtime not in ("3.1", "6.0"):
+        raise ArchiveRootError(f"unsupported explicit runtime: {runtime}")
     client.connect()
     client.require_device()
     client.require_shell_injection()
@@ -124,12 +126,13 @@ def _check_target(client: SdbClient) -> TargetAssessment:
         raise ArchiveRootError(
             "sdbd-tarlauncher lacks effective SETUID/SETGID capabilities"
         )
-    runtime = _runtime(client)
+    runtime_source = "explicit" if runtime is not None else "detected"
+    runtime = runtime or _runtime(client)
     tar_options = _capture(client, "/usr/bin/tar --help | grep -- --to-command")
     if "--to-command" not in tar_options:
         raise ArchiveRootError("TV tar does not support --to-command")
     return TargetAssessment(
-        capabilities, _capture(client, SYSTEM_HASH_COMMAND), runtime
+        capabilities, _capture(client, SYSTEM_HASH_COMMAND), runtime, runtime_source
     )
 
 
@@ -259,6 +262,7 @@ async def probe(
     tv_host: str,
     *,
     model: str | None = None,
+    runtime: str | None = None,
     callback_host: str | None = None,
     bind_host: str | None = None,
     sdb_timeout: float = 15.0,
@@ -273,7 +277,7 @@ async def probe(
     bind = bind_host or callback
     ipaddress.IPv4Address(bind)
     client = SdbClient(find_sdb(), tv_host, timeout=sdb_timeout)
-    assessment = await asyncio.to_thread(_check_target, client)
+    assessment = await asyncio.to_thread(_check_target, client, runtime)
     payloads = payloads or payload_directory(
         "common31" if assessment.runtime == "3.1" else "common"
     )
@@ -342,6 +346,7 @@ async def probe(
                     "model": model,
                     "host": tv_host,
                     "runtime": assessment.runtime,
+                    "runtime_source": assessment.runtime_source,
                     "authenticated": True,
                     "uid": identity.uid,
                     "euid": identity.euid,

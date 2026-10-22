@@ -27,12 +27,13 @@ extracted keys, device tokens, serial numbers, private network configuration, or
 precompiled exploit payloads. Release archives contain payloads built from this
 source.
 
-This README describes v0.0.10 and the current source tree. The `archive-root`
+This README describes v0.0.11 and the current source tree. The `archive-root`
 command requires v0.0.9 or newer, or a source checkout; it is absent from v0.0.8
 and earlier standalone releases. For commands in an older download, use its
 bundled documentation or the [v0.0.8 README](https://github.com/chris-ritsen/samsung-tv-root/blob/v0.0.8/README.md).
-v0.0.10 can detect the active .NET runtime when Samsung's apphost rejects
-`--list-runtimes`; this does not establish root compatibility on a new TV.
+v0.0.10 added detection for Samsung's nonstandard .NET apphost. v0.0.11 also
+accepts a different active CLR directory and permits an explicit runtime choice
+when discovery is unavailable. Neither change establishes root on a new TV.
 
 ## TV compatibility
 
@@ -65,7 +66,7 @@ the row says otherwise. Root access and volatile UEP disable are separate result
 
 v0.0.10 includes runtime detection for Samsung's nonstandard `dotnet` apphost,
 which the Q60B, AU9072, and Q7F3A owners had worked around locally. Those owners
-have not yet confirmed an unmodified v0.0.10 release on their TVs.
+have not yet confirmed an unmodified v0.0.10 or v0.0.11 release on their TVs.
 
 The [QN90D fork's experimental branch](https://github.com/lzongren/samsung-tv-root/blob/codex/qn90d-hdmi-wake-service/docs/qn90d-hdmi-wake.md)
 describes an archive-root-assisted installation on `QN50QN90DAFXZA`, firmware
@@ -405,6 +406,16 @@ implementation has not been run on an S90D. The agent still has Samsung's
 ./samsung-tv-root archive-root probe "$TV_IP"
 ./samsung-tv-root archive-root root "$TV_IP" --command 'id'
 ```
+
+The generic archive commands do not require a `qn90b` or `qn90f` profile. If
+the TV has the required capabilities but its .NET runtime cannot be discovered,
+an owner can select the installed runtime with `--runtime 3.1` or
+`--runtime 6.0` on either command. `6.0` selects the .NET 6 payload for a
+compatible runtime version 6 or later. This only bypasses runtime discovery;
+the SDB foothold, file capabilities, tar support, authenticated UID-0 callback,
+and cleanup checks still apply. A wrong choice can fail the attempt, so use it
+only after inspecting the target's runtime. The result records whether the
+runtime was detected or explicitly selected.
 
 On Windows, use `samsung-tv-root.exe`. From source, replace `./samsung-tv-root`
 with `.venv/bin/python -m samsung_tv_root` (Windows:
