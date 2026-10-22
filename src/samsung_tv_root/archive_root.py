@@ -62,6 +62,46 @@ def _file_capabilities(line: str) -> dict[str, str]:
     return result
 
 
+def _runtime(client: SdbClient) -> str:
+    result = client.capture("/usr/bin/dotnet --list-runtimes")
+    if "[exit:0]" in result.output:
+        runtimes = result.output.split("\n[exit:0]", 1)[0]
+        versions = [
+            (int(match.group(1)), int(match.group(2)))
+            for line in runtimes.splitlines()
+            if (match := re.match(
+                r"Microsoft\.NETCore\.App (\d+)\.(\d+)\.\d+\s+\[", line
+            ))
+        ]
+    elif (
+        "Unknown option --list-runtimes" in result.output
+        and "[exit:255]" in result.output
+    ):
+        active = _capture(client, "readlink -f /usr/share/dotnet.tizen/netcoreapp")
+        match = re.fullmatch(
+            r"/usr/share/dotnet/shared/Microsoft\.NETCore\.App/"
+            r"(\d+)\.(\d+)\.(\d+)", active
+        )
+        if match is None:
+            raise ArchiveRootError(f"unexpected active .NET runtime path: {active}")
+        _capture(
+            client,
+            "test -r /usr/share/dotnet.tizen/netcoreapp/libcoreclr.so && "
+            "test -r /usr/share/dotnet.tizen/netcoreapp/System.Private.CoreLib.dll",
+        )
+        versions = [(int(match.group(1)), int(match.group(2)))]
+    else:
+        raise ArchiveRootError(
+            f"SDK command failed: /usr/bin/dotnet --list-runtimes: "
+            f"{result.output.strip()}"
+        )
+    if any(major >= 6 for major, _ in versions):
+        return "6.0"
+    if (3, 1) in versions:
+        return "3.1"
+    raise ArchiveRootError("no supported Microsoft.NETCore.App runtime (3.1 or 6+)")
+
+
 def _check_target(client: SdbClient) -> TargetAssessment:
     client.connect()
     client.require_device()
@@ -84,21 +124,7 @@ def _check_target(client: SdbClient) -> TargetAssessment:
         raise ArchiveRootError(
             "sdbd-tarlauncher lacks effective SETUID/SETGID capabilities"
         )
-    runtimes = _capture(client, "/usr/bin/dotnet --list-runtimes")
-    majors = {
-        int(match.group(1))
-        for line in runtimes.splitlines()
-        if (match := re.match(r"Microsoft\.NETCore\.App (\d+)\.\d+\.\d+\s+\[", line))
-    }
-    if any(major >= 6 for major in majors):
-        runtime = "6.0"
-    elif 3 in majors and any(
-        re.match(r"Microsoft\.NETCore\.App 3\.1\.\d+\s+\[", line)
-        for line in runtimes.splitlines()
-    ):
-        runtime = "3.1"
-    else:
-        raise ArchiveRootError("no supported Microsoft.NETCore.App runtime (3.1 or 6+)")
+    runtime = _runtime(client)
     tar_options = _capture(client, "/usr/bin/tar --help | grep -- --to-command")
     if "--to-command" not in tar_options:
         raise ArchiveRootError("TV tar does not support --to-command")

@@ -27,30 +27,58 @@ extracted keys, device tokens, serial numbers, private network configuration, or
 precompiled exploit payloads. Release archives contain payloads built from this
 source.
 
-This README describes v0.0.9 and the current source tree. The `archive-root`
+This README describes v0.0.10 and the current source tree. The `archive-root`
 command requires v0.0.9 or newer, or a source checkout; it is absent from v0.0.8
 and earlier standalone releases. For commands in an older download, use its
 bundled documentation or the [v0.0.8 README](https://github.com/chris-ritsen/samsung-tv-root/blob/v0.0.8/README.md).
+v0.0.10 can detect the active .NET runtime when Samsung's apphost rejects
+`--list-runtimes`; this does not establish root compatibility on a new TV.
 
-## Tested TVs
+## TV compatibility
 
-| Profile | Exact model      | Installed firmware | Internal build                     | Platform                                           |
-| ------- | ---------------- | ------------------ | ---------------------------------- | -------------------------------------------------- |
-| `qn90b` | `QN55QN90BAFXZA` | `T-PTMAKUC-1602.3` | `T-PTMAKUC-REL-202310071804`       | Tizen 6.5, Linux 5.4.77, ARMv7                     |
-| `qn90f` | `QN75QN90FAFXZA` | `1203.0`           | `T-RSMFAKUC-0090-REL-202512092052` | Tizen 9.0, Linux 5.4.261, AArch64, Mali-G510 r48p0 |
-| `qn90f` | `QA55QN90FAUXEG` | `1301.0`           | `T-RSMFUABC-0090-REL-202607141954` | Tizen 9.0, Linux 5.4.261, AArch64, Mali-G510 r48p0 |
+Root results are for **exact models and firmware**, not every size or regional
+variant in a series. "Owner-tested" means I ran the chain on my TV. "Reported"
+means another owner reports UID 0 or an authenticated root agent; linked reports
+vary in how much evidence they provide. "Candidate" means an offline firmware
+match, **not** a successful TV test or a promise that the current release works.
+All routes below start with the `SVE-2025-50109` SDB package-name foothold unless
+the row says otherwise. Root access and volatile UEP disable are separate results.
 
-The QN90F root path was live-tested on firmware 1203.0 and 1301.0. The 1301.0
-validation used the public v0.0.3 Windows x86-64 release on `QA55QN90FAUXEG` and
-confirmed the SDB foothold, authenticated UID/GID 0 root agent, full capability
-mask, credential and GPU page-table restoration, root command execution, and
-volatile UEP disable. Its UI firmware string was reported as
-`T-RSMFUBAC-0090-1301.0`; the authoritative on-device build fingerprint and
-Samsung package use `T-RSMFUABC-0090`.
+| Status | Exact TV or firmware family | Firmware | Root route and result | Evidence / limitation |
+| --- | --- | --- | --- | --- |
+| Owner-tested | `QN55QN90BAFXZA` (QN90B) | `T-PTMAKUC-1602.3` | FDET physical-memory route; archive-launcher route also tested | [QN90B reproduction](docs/research-notes/QN90B_REPRODUCTION.md) |
+| Owner-tested | `QN75QN90FAFXZA` (QN90F) | `T-RSMFAKUC-0090-1203.0` | Mali-G510 `CVE-2025-0072` route; archive-launcher route also tested | [QN90F reproduction](docs/research-notes/QN90F_REPRODUCTION.md) |
+| Reported, public release | `QA55QN90FAUXEG` (QN90F) | `T-RSMFUABC-0090-1301.0` | Mali route; authenticated root, full capability mask and volatile UEP disable | [Independent v0.0.3 validation](docs/research-notes/QN90F_REPRODUCTION.md#tested-targets); the TV UI misspelled the family `RSMFUBAC` |
+| Reported, adapted | `QN55Q60BAFXZC` (Q60B) | `T-NKLBAKUC-1720.7` | Archive-launcher route; later boot-time self-root in a [fork](https://github.com/levkropp/samsung-tv-root-untethered/tree/untethered-boot-agent) | [Owner's UID 0 proof and runtime-detection fix](https://github.com/chris-ritsen/samsung-tv-root/issues/1); not stock release behavior |
+| Reported, adapted | `UE50AU9072UXXH` (AU9072) | `T-NKLADEUC-2301.1` | Archive-launcher route; authenticated UID 0 | [Owner's report](https://github.com/chris-ritsen/samsung-tv-root/issues/5); requires a .NET 3.1 runtime-path fallback |
+| Reported, adapted | `QE77S90CATXXN` (S90C) | `T-PTMCDEUC-2000.2` | Archive-launcher bootstrap through a separate direct-SDB wrapper | [Owner's report](https://github.com/chris-ritsen/samsung-tv-root/issues/3) and [downstream source](https://github.com/invaliddayta/s90c-tools); not an unmodified controller test |
+| Reported, adapted | `TQ43Q7F3AUXXC` (Q7F3A) | `T-RSLFDEUC-0090`, build `202608061939` | Archive-launcher route; authenticated UID 0 | [Owner's v0.0.9 report](https://github.com/chris-ritsen/samsung-tv-root/issues/5#issuecomment-6338160290); requires runtime-detection fallback |
+| Reported, downstream | `QN85QN90AAFXZA` (QN90A) | `T-NKM2AKUC-2301.1` | SDB plus archive-launcher-based root, later TV-local reacquisition | [Couchroot device record](https://github.com/splitcipher/couchroot/blob/main/docs/lab/devices/qn90a/README.md) and [owner's Reddit report](https://www.reddit.com/r/Tizen/comments/1x3cog3/experimental_release_vetro_allinone_tv_manager/) |
+| Reported, downstream | `QN55S90DAFXZA` (S90D) | `T-PTMDAKUC-0090-2130.0` | SDB plus capability/mount-namespace/archive-launcher route | [Owner's route description](https://www.reddit.com/r/Tizen/comments/1wl4e0n/i_made_a_minimal_plexyoutube_launcher_the_default/) and [Couchroot device record](https://github.com/splitcipher/couchroot/blob/main/docs/lab/devices/s90d/README.md) |
+| Reported, downstream | `QE50Q80AATXZT` (Q80A) | `T-NKM2DEUC-2301.1` | Vetro's archive-launcher-derived integration; authenticated root agent | [Vetro compatibility record](https://github.com/andrearicci93/vetro#compatibility); not this CLI/release |
+| Reported, downstream | `QE43Q67BAUXXH` (Q67B) | `T-NKLBDEUC-1720.7` | Vetro integration reported UID 0 | [Community diagnostic in Vetro](https://github.com/andrearicci93/vetro#compatibility); cold-boot persistence and device controls unverified |
+| Candidate, untested | Other QN90B variants using `T-PTMAKUC-1602.3` | `1602.3` | FDET route has an identical vulnerable handler in the decrypted update | Same firmware code is strong evidence, but no other size/region was root-tested here |
+| Candidate, untested | Other QN90F variants using the inspected `T-RSMF*` firmware | `1131.0`, `1296.8`, `1301.0` | SDB and archive-launcher prerequisites are present in inspected images | Mali kernel exploitability and the live runtime/preflight remain unverified; 1301.0 is proven only on the model above |
+| Candidate, untested | QN80F / Frame 2025 on `T-PTMFAKUC-0090` | `1131.0`, `1301.0` | SDB plus archive-launcher route is a static candidate | Files and SDB pattern found offline; no live root result or proven Mali route |
+| Candidate, untested | S90F family on `T-RSMFAKUC-0090` | `1301.0` | SDB plus archive-launcher route is a static candidate | Do not infer the QN90F Mali chain merely from an `r48p0` userspace library |
+| Candidate, untested | QN80H / Frame 2026 on `T-PTMHAKUC-0100` | `1204.6` | SDB plus archive-launcher route is a static candidate | Tizen 10 image inspected offline; no retail root test |
 
-Other screen sizes and model variants are untested. The preflight reports
-`tested`, `compatible-untested`, or `incompatible` from the platform
-requirements instead of rejecting every build-number change.
+v0.0.10 includes runtime detection for Samsung's nonstandard `dotnet` apphost,
+which the Q60B, AU9072, and Q7F3A owners had worked around locally. Those owners
+have not yet confirmed an unmodified v0.0.10 release on their TVs.
+
+The [QN90D fork's experimental branch](https://github.com/lzongren/samsung-tv-root/blob/codex/qn90d-hdmi-wake-service/docs/qn90d-hdmi-wake.md)
+describes an archive-root-assisted installation on `QN50QN90DAFXZA`, firmware
+`T-PTMDAKUC-0090-2130.0`, but does not publish a separate UID-0 root proof;
+it is not counted as a confirmed root result above. A [Q90T owner](https://github.com/chris-ritsen/samsung-tv-root/issues/2#issuecomment-6297686929)
+reported root through a **different USB-root adaptation**, while this project's
+archive route failed on that TV. Neither is a compatibility claim for this CLI.
+
+Most forks have no commits beyond this repository; a fork or successful app
+installation alone is not root evidence. Report new results with exact model,
+firmware/build, route, release or local changes, and an authenticated UID-0
+readback. The preflight's `tested`, `compatible-untested`, and `incompatible`
+labels reflect its own platform checks, not all community reports in this table.
 
 ## Included
 
