@@ -6,9 +6,11 @@ import asyncio
 import io
 import ipaddress
 import json
+import os
 import re
 import secrets
 import subprocess
+import sys
 import tarfile
 import tempfile
 from dataclasses import dataclass
@@ -137,9 +139,21 @@ def _check_target(client: SdbClient, runtime: str | None = None) -> TargetAssess
 
 
 def _openssl(*arguments: str) -> None:
+    environment = os.environ.copy()
+    # PyInstaller's bundled libraries must not override the system OpenSSL binary.
+    if getattr(sys, "frozen", False) and sys.platform.startswith("linux"):
+        original_path = environment.get("LD_LIBRARY_PATH_ORIG")
+        if original_path is None:
+            environment.pop("LD_LIBRARY_PATH", None)
+        else:
+            environment["LD_LIBRARY_PATH"] = original_path
     try:
         result = subprocess.run(
-            ("openssl", *arguments), capture_output=True, text=True, check=False
+            ("openssl", *arguments),
+            capture_output=True,
+            text=True,
+            check=False,
+            env=environment,
         )
     except FileNotFoundError as error:
         raise ArchiveRootError(

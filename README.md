@@ -27,13 +27,16 @@ extracted keys, device tokens, serial numbers, private network configuration, or
 precompiled exploit payloads. Release archives contain payloads built from this
 source.
 
-This README describes v0.0.11 and the current source tree. The `archive-root`
+This README describes v0.0.12 and the current source tree. The `archive-root`
 command requires v0.0.9 or newer, or a source checkout; it is absent from v0.0.8
 and earlier standalone releases. For commands in an older download, use its
 bundled documentation or the [v0.0.8 README](https://github.com/chris-ritsen/samsung-tv-root/blob/v0.0.8/README.md).
 v0.0.10 added detection for Samsung's nonstandard .NET apphost. v0.0.11 also
 accepts a different active CLR directory and permits an explicit runtime choice
 when discovery is unavailable. Neither change establishes root on a new TV.
+v0.0.12 retries the SDB timing check when its first control call was unusually
+slow, and restores the host library path for OpenSSL launched by the frozen
+Linux executable. These are host-tool fixes, not new TV exploit routes.
 
 ## TV compatibility
 
@@ -54,6 +57,10 @@ the row says otherwise. Root access and volatile UEP disable are separate result
 | Reported, adapted | `UE50AU9072UXXH` (AU9072) | `T-NKLADEUC-2301.1` | Archive-launcher route; authenticated UID 0 | [Owner's report](https://github.com/chris-ritsen/samsung-tv-root/issues/5); requires a .NET 3.1 runtime-path fallback |
 | Reported, adapted | `QE77S90CATXXN` (S90C) | `T-PTMCDEUC-2000.2` | Archive-launcher bootstrap through a separate direct-SDB wrapper | [Owner's report](https://github.com/chris-ritsen/samsung-tv-root/issues/3) and [downstream source](https://github.com/invaliddayta/s90c-tools); not an unmodified controller test |
 | Reported, adapted | `TQ43Q7F3AUXXC` (Q7F3A) | `T-RSLFDEUC-0090`, build `202608061939` | Archive-launcher route; authenticated UID 0 | [Owner's v0.0.9 report](https://github.com/chris-ritsen/samsung-tv-root/issues/5#issuecomment-6338160290); requires runtime-detection fallback |
+| Reported, adapted | `UE43DU7100KXXU` (DU7100) | `T-KSU2EDDEUC-0090-REL-202603190204`, 2130.0 | Archive-launcher route; authenticated UID 0 | [Owner's report](https://github.com/chris-ritsen/samsung-tv-root/issues/6); host-side runtime fallback on an older checkout, not an unmodified release test |
+| Reported, downstream | `QN43LS03DAFXZA` (Frame 2024) | `T-PTMDAKUC-0090-2130.0` | Archive-launcher probe returned UID 0 | [Owner's report](https://github.com/chris-ritsen/samsung-tv-root/issues/8); vendored v0.0.11 code in `quiet-tizen`, with a first-call timing false negative |
+| Reported, downstream | `QA55QEF1AULXL` (QEF1A) | `T-RSLFUABC-0090-REL-202608061940` | SDB plus archive-launcher route; authenticated UID 0 | [Owner's evidence](https://github.com/DemonKingSwarn/samsung-tv-tizen-root/blob/main/evidence/root-evidence.json) and [write-up](https://github.com/DemonKingSwarn/samsung-tv-tizen-root/blob/main/ROOTING-RESEARCH.md); adapted host wrapper, not an unmodified release test |
+| Reported, public release | `UA43AU7000KXXD` (AU7000) | `T-KSU2EUABC-REL-202607211852` | Unmodified v0.0.11 archive-launcher route; authenticated UID 0 twice | [Owner's report](https://github.com/chris-ritsen/samsung-tv-root/issues/9); frozen Linux host needed an OpenSSL library-path workaround |
 | Reported, downstream | `QN85QN90AAFXZA` (QN90A) | `T-NKM2AKUC-2301.1` | SDB plus archive-launcher-based root, later TV-local reacquisition | [Couchroot device record](https://github.com/splitcipher/couchroot/blob/main/docs/lab/devices/qn90a/README.md) and [owner's Reddit report](https://www.reddit.com/r/Tizen/comments/1x3cog3/experimental_release_vetro_allinone_tv_manager/) |
 | Reported, downstream | `QN55S90DAFXZA` (S90D) | `T-PTMDAKUC-0090-2130.0` | SDB plus capability/mount-namespace/archive-launcher route | [Owner's route description](https://www.reddit.com/r/Tizen/comments/1wl4e0n/i_made_a_minimal_plexyoutube_launcher_the_default/) and [Couchroot device record](https://github.com/splitcipher/couchroot/blob/main/docs/lab/devices/s90d/README.md) |
 | Reported, downstream | `QE50Q80AATXZT` (Q80A) | `T-NKM2DEUC-2301.1` | Vetro's archive-launcher-derived integration; authenticated root agent | [Vetro compatibility record](https://github.com/andrearicci93/vetro#compatibility); not this CLI/release |
@@ -67,6 +74,11 @@ the row says otherwise. Root access and volatile UEP disable are separate result
 v0.0.10 includes runtime detection for Samsung's nonstandard `dotnet` apphost,
 which the Q60B, AU9072, and Q7F3A owners had worked around locally. Those owners
 have not yet confirmed an unmodified v0.0.10 or v0.0.11 release on their TVs.
+
+On one `UN50M75HAGXZD` running Tizen 10, [the owner reports](https://github.com/chris-ritsen/samsung-tv-root/issues/7)
+that SDB connects but rejects this package-name injection before archive-root
+preflight can run. This is an exact-build foothold failure, not evidence that all
+Tizen 10 TVs reject the route.
 
 The [QN90D fork's experimental branch](https://github.com/lzongren/samsung-tv-root/blob/codex/qn90d-hdmi-wake-service/docs/qn90d-hdmi-wake.md)
 describes an archive-root-assisted installation on `QN50QN90DAFXZA`, firmware
