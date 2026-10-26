@@ -15,6 +15,22 @@ On the TV:
 4. Enter the controller computer's LAN IPv4 address.
 5. Reboot the TV.
 
+Use these steps only on TVs you own or are authorized to administer. Restrict
+Developer Mode/SDB to your intended controller computer and trusted network.
+
+## Access model (read first)
+
+This tool uses custom host access, not a permanent TV-side root install.
+
+1. **Host-to-TV access/configuration:** your computer reaches the TV through
+   Samsung Developer Mode and SDB.
+2. **Volatile root acquisition:** `root` commands acquire root only for the
+   current TV boot/session.
+3. **Authenticated root-agent/control access:** the TV callback is accepted only
+   through authenticated channels tied to your configured host/profile.
+4. **Optional post-root actions:** scripts, commands, and controller actions run
+   only after root is acquired for that session.
+
 ## 3. Check the release
 
 Extract the matching release and run:
@@ -76,7 +92,7 @@ QN90F profile, the model-specific commands infer it. Use `--profile NAME` when
 more than one configured TV has the same model. A nonstandard Tizen Studio
 installation can be saved as a top-level `sdb = "C:/path/to/sdb.exe"` value.
 
-## 5. Verify and root the TV
+## 5. Verify and acquire volatile root
 
 Using the saved profile:
 
@@ -134,7 +150,7 @@ commands. A reachable TV network API does not prove SDB is available. A rejected
 `dotnet --list-runtimes` currently stops archive-root runtime detection, even
 when a runtime directory exists.
 
-## 6. Keep root available
+## 6. Keep custom host access available
 
 Run the controller with the same configuration:
 

@@ -2,6 +2,10 @@
 
 Start with the [quick start](../QUICKSTART.md) to install the host tool, create a
 TV profile, run preflight, and open a root shell.
+For normal use, root access is custom host access from your configured
+controller computer through Developer Mode/SDB, scoped to the configured TV,
+authenticated on callback/control channels, and volatile per boot.
+Use these guides only for TVs you own or are authorized to administer.
 
 These guides describe v0.0.11 and the current source tree. `archive-root` requires
 v0.0.9 or newer, or a source checkout. For older standalone downloads, start with
@@ -19,7 +23,8 @@ their bundled documentation or the [v0.0.8 README](https://github.com/chris-rits
 These files preserve implementation, exploit reproduction, and reverse-
 engineering details. They are not setup guides. Commands and observations may
 be historical, incomplete, or specific to a source checkout and tested
-firmware.
+firmware. For operational setup and day-to-day control, use the
+[quick start](../QUICKSTART.md) and [controller guide](user/CONTROLLER.md).
 
 - [Exploit chain](research-notes/EXPLOIT_CHAIN.md)
 - [QN90B reproduction](research-notes/QN90B_REPRODUCTION.md)
