@@ -3,7 +3,10 @@
 > **Research note:** This file preserves implementation and reverse-engineering
 > details. It is not an end-user setup guide and may contain dated,
 > source-checkout-specific procedures. Start with the
-> [quick start](../../QUICKSTART.md) for normal use.
+> [quick start](../../QUICKSTART.md) for normal use. Normal operation uses
+> custom host access through your configured Developer Mode/SDB controller host;
+> root and related control channels are authenticated and volatile per boot. Use
+> this material only for TVs you own or are authorized to administer.
 
 ## Target
 

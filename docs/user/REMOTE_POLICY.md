@@ -4,6 +4,13 @@ Remote handling is disabled by default and has no implicit mappings. The host
 controller only touches an input device whose exact kernel name appears in the
 configuration.
 
+Remote policy actions are part of the custom host access model: they apply only
+after root is acquired for the current TV session, and they run through the
+authenticated host control path for the configured TV profile.
+
+Use this guide only for TVs you own or are authorized to administer, and keep
+Developer Mode/SDB limited to the intended controller computer/network.
+
 The commands below require the [host controller](CONTROLLER.md) to be running.
 From a source checkout, use `.venv/bin/samsung-tv-root`; from an extracted
 release, use `./samsung-tv-root` (Windows: `samsung-tv-root.exe`).

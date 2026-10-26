@@ -7,7 +7,8 @@ control my window manager and MPV, control active YouTube, Plex, and X.com
 playback through CDP, and collect diagnostics from the TV.
 
 My TVs are blocked from the internet after Developer Mode is enabled. A
-host-side controller reacquires root whenever either TV powers on.
+host-side controller on my configured computer reacquires volatile root
+whenever either TV powers on.
 
 The QN90B took about a day with Codex in March 2026. The QN90F took about three
 hours with a newer version of Codex in July 2026, right out of the box. This
@@ -21,6 +22,27 @@ Source and host tooling for obtaining volatile root on two tested Samsung Tizen
 TVs, keeping root available while the TV is on, observing or remapping physical
 remote input, controlling selected native TV functions, and recovering Samsung
 SWU firmware keys.
+
+## Custom host access model and authorization
+
+This project does not install a permanent TV-side root service. It creates
+custom host access from your configured controller computer through Samsung
+Developer Mode and SDB, scoped to the TV profile you configure.
+
+Use this documentation only for TVs you own or are explicitly authorized to
+administer. Restrict Developer Mode/SDB to the intended controller computer and
+trusted local network.
+
+The access boundaries are:
+
+1. **Host-to-TV access/configuration:** Developer Mode allows SDB from the
+   controller host address you set on the TV.
+2. **Volatile root acquisition:** each root command acquires UID 0 for the
+   current TV boot/session only.
+3. **Authenticated root-agent/control access:** the rooted TV agent calls back
+   to the configured host and profile through authenticated control channels.
+4. **Optional post-root actions:** custom commands, scripts, remote policies,
+   and controller actions run only after root is acquired for that session.
 
 The source tree does not track Samsung firmware, Samsung's `sdb` binary,
 extracted keys, device tokens, serial numbers, private network configuration, or

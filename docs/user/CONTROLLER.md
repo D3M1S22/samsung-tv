@@ -1,8 +1,23 @@
 # Host controller guide
 
 The controller keeps volatile root available without modifying the TV's boot
-configuration. It runs on a computer that has Tizen Studio `sdb` access to the
-TV.
+configuration. It runs on your configured computer with Tizen Studio `sdb`
+access to the TV. This is custom host access, not a permanent TV-side root
+installation.
+
+Use this guide only for TVs you own or are authorized to administer. Restrict
+Developer Mode/SDB to the intended controller computer and trusted network.
+
+The access boundaries are:
+
+1. **Host-to-TV access/configuration:** Developer Mode binds SDB access to the
+   configured controller host.
+2. **Volatile root acquisition:** exploit routes acquire root for the active TV
+   boot/session only.
+3. **Authenticated root-agent/control access:** the host accepts only
+   authenticated callbacks/control messages for the configured TV profile.
+4. **Optional post-root actions:** `execute`, remote rules, and other control
+   actions run only after root is acquired.
 
 ## Configuration
 
